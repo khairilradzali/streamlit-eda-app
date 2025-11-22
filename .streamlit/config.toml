@@ -1,0 +1,13 @@
+[theme]
+base="dark"            # "light" or "dark"
+primaryColor="#1f77b4"
+backgroundColor="#0e1117"
+secondaryBackgroundColor="#11141a"
+textColor="#e6eef8"
+font="sans serif"
+
+[server]
+headless = true
+
+[runner]
+magic = false
