@@ -36,7 +36,7 @@ def train_test_split_xy(df, target, test_size=0.2, random_state=42, scale=False)
 
 def render_footer():
     import streamlit as st
-    st.markdown("---")  # horizontal separator
+    st.markdown("---")
     st.markdown(
         '<p style="text-align:right; font-size:12px; color:gray;">© khairilradzali</p>',
         unsafe_allow_html=True

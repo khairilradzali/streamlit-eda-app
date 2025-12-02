@@ -1,8 +1,7 @@
 # pages/4_Cleaning.py
 import streamlit as st
 import pandas as pd
-from utils import render_footer
-from utils import get_df, set_df_in_state, to_csv_bytes
+from utils import render_footer, get_df, set_df_in_state, to_csv_bytes
 
 st.set_page_config(page_title="Cleaning", layout="wide")
 st.title("🧹 Data Cleaning Tools")
@@ -15,17 +14,19 @@ else:
     st.subheader("Preview")
     st.dataframe(df.head())
 
+    # --- Column operations ---
     st.markdown("### Column operations")
-    cols = st.multiselect("Select columns to drop", options=df.columns.tolist())
+    cols_to_drop = st.multiselect("Select columns to drop", options=df.columns.tolist())
     if st.button("Drop selected columns"):
-        if cols:
-            df2 = df.drop(columns=cols)
-            set_df_in_state(df2)
-            st.success(f"Dropped columns: {cols}")
-            st.experimental_rerun()
+        if cols_to_drop:
+            df = df.drop(columns=cols_to_drop)
+            set_df_in_state(df)
+            st.success(f"Dropped columns: {cols_to_drop}")
+            st.dataframe(df.head())
         else:
             st.info("No columns selected.")
 
+    # --- Missing value handling ---
     st.markdown("### Missing value handling")
     col_fill = st.selectbox("Select column to fill NA", options=[None] + list(df.columns))
     if col_fill:
@@ -34,15 +35,16 @@ else:
             if fill_val == "":
                 st.info("No fill value provided.")
             else:
-                # attempt numeric cast
                 try:
                     val = float(fill_val)
-                except:
+                except ValueError:
                     val = fill_val
                 df[col_fill] = df[col_fill].fillna(val)
                 set_df_in_state(df)
                 st.success(f"Filled NA in {col_fill} with {val}")
+                st.dataframe(df.head())
 
+    # --- Convert dtype ---
     st.markdown("### Convert dtype")
     col_convert = st.selectbox("Select column to convert dtype", options=[None] + list(df.columns))
     dtype = st.selectbox("Convert to", ["int", "float", "str", "category", "datetime"])
@@ -61,23 +63,34 @@ else:
                     df[col_convert] = pd.to_datetime(df[col_convert], errors="coerce")
                 set_df_in_state(df)
                 st.success(f"Converted {col_convert} to {dtype}")
+                st.dataframe(df.head())
             except Exception as e:
                 st.error("Conversion failed.")
                 st.exception(e)
 
+    # --- Duplicates and dropna ---
     st.markdown("### Duplicates and dropna")
     if st.button("Drop duplicate rows"):
-        df2 = df.drop_duplicates()
-        set_df_in_state(df2)
+        df = df.drop_duplicates()
+        set_df_in_state(df)
         st.success("Dropped duplicates.")
-    if st.button("Drop rows with any NA"):
-        df2 = df.dropna()
-        set_df_in_state(df2)
-        st.success("Dropped rows with NA.")
+        st.dataframe(df.head())
 
+    if st.button("Drop rows with any NA"):
+        df = df.dropna()
+        set_df_in_state(df)
+        st.success("Dropped rows with NA.")
+        st.dataframe(df.head())
+
+    # --- Download cleaned dataset ---
     st.markdown("---")
     st.subheader("Download cleaned dataset")
-    st.download_button("Download cleaned CSV", data=to_csv_bytes(get_df()), file_name="cleaned_data.csv", mime="text/csv")
+    st.download_button(
+        "Download cleaned CSV",
+        data=to_csv_bytes(df),
+        file_name="cleaned_data.csv",
+        mime="text/csv"
+    )
 
 # Footer
 render_footer()

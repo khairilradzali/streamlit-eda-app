@@ -86,6 +86,65 @@ if uploaded_file is not None:
     except Exception as e:
         st.error("Couldn't read the CSV. Try a different file.")
         st.exception(e)
+# ============================
+# Sample datasets section
+# ============================
+st.markdown("### Or try with a sample dataset")
+
+sample_choice = st.selectbox(
+    "Choose a sample dataset",
+    ["None", "Iris", "Titanic", "Tips", "Telco Churn"]
+)
+
+# Load preview (in memory only)
+preview_df = None
+if sample_choice != "None":
+    try:
+        if sample_choice == "Iris":
+            preview_df = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv")
+        elif sample_choice == "Titanic":
+            preview_df = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv")
+        elif sample_choice == "Tips":
+            preview_df = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/tips.csv")
+        elif sample_choice == "Telco Churn":
+            preview_df = pd.read_csv("https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv")
+
+        st.write(f"### Preview of {sample_choice} dataset")
+        df_display = preview_df.copy()
+        bool_cols = df_display.select_dtypes(include=['bool']).columns
+        df_display[bool_cols] = df_display[bool_cols].astype(str)
+
+        st.dataframe(df_display.head())
+        st.markdown(f"**Rows:** {preview_df.shape[0]} — **Columns:** {preview_df.shape[1]}")
+
+    except Exception as e:
+        st.error("Could not preview the sample dataset.")
+        st.exception(e)
+
+st.markdown("---")
+
+# Save selected dataset to session state
+if st.button("Load sample dataset"):
+    if sample_choice == "None":
+        st.warning("Please choose a dataset.")
+    else:
+        try:
+            set_df_in_state(preview_df)
+            # store success message
+            st.session_state["sample_loaded"] = sample_choice
+            st.rerun()
+
+        except Exception as e:
+            st.error("Could not load the sample dataset.")
+            st.exception(e)
+
+# Show success message after rerun
+if "sample_loaded" in st.session_state:
+    st.success(f"Loaded sample dataset: {st.session_state['sample_loaded']}")
+    del st.session_state["sample_loaded"]
+
+
+##
 
 if st.button("Clear uploaded data from session"):
     clear_df()
