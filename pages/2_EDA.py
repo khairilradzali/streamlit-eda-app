@@ -2,10 +2,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import seaborn as sns
-import matplotlib.pyplot as plt
-from utils import get_df
-from utils import render_footer
+from utils import get_df, render_footer
+
 st.set_page_config(page_title="EDA", layout="wide")
 st.title("📊 Exploratory Data Analysis (EDA)")
 
@@ -13,8 +11,15 @@ df = get_df()
 if df is None:
     st.info("Upload dataset on Home page to start EDA.")
 else:
+    # --- Remove duplicate columns safely ---
+    if df.columns.duplicated().any():
+        st.warning(f"Duplicate columns detected: {df.columns[df.columns.duplicated()].tolist()}. Keeping first occurrences only.")
+        df = df.loc[:, ~df.columns.duplicated()]
+
+    # --- Univariate analysis ---
     st.subheader("Select column for univariate analysis")
     col = st.selectbox("Column", df.columns)
+    
     if col:
         if pd.api.types.is_numeric_dtype(df[col]):
             fig = px.histogram(df, x=col, nbins=30, title=f"Histogram of {col}")
@@ -22,11 +27,15 @@ else:
             st.markdown(f"**Summary statistics for {col}**")
             st.write(df[col].describe())
         else:
-            fig = px.bar(df[col].value_counts().reset_index().rename(columns={"index":col, col:"count"}), x=col, y="count", title=f"Bar counts of {col}")
+            # Safe value counts DataFrame
+            df_counts = df[col].value_counts().reset_index()
+            df_counts.columns = [col, "count"]  # ensures unique column names
+            fig = px.bar(df_counts, x=col, y="count", title=f"Bar counts of {col}")
             st.plotly_chart(fig, use_container_width=True)
             st.write(df[col].value_counts().head(20))
 
     st.markdown("---")
+    # --- Bivariate analysis ---
     st.subheader("Bivariate analysis (interactive)")
     cols = df.columns.tolist()
     x = st.selectbox("X-axis", cols, index=0, key="eda_x")
@@ -44,6 +53,7 @@ else:
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
+    # --- Correlation heatmap ---
     st.subheader("Correlation heatmap (numerical columns only)")
     numeric = df.select_dtypes(include=['int64','float64'])
     if numeric.shape[1] >= 2:
